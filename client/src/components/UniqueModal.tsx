@@ -1,30 +1,53 @@
 import { useState } from "react";
 import { IUniqueItem } from "../interfaces";
-import { Box } from "@mui/system";
-import Slider from "@mui/material/Slider";
-import { Divider, Typography } from "@mui/material";
+import {
+  Divider,
+  Typography,
+  Button,
+  Slider,
+  Select,
+  Box,
+  MenuItem,
+} from "@mui/material";
+import { saveUserUniques, addToMule } from "../service";
 
 interface IItemProps {
   item: IUniqueItem;
   uniques: IUniqueItem[];
   setUniques: React.Dispatch<React.SetStateAction<IUniqueItem[]>>;
   checked: boolean;
+  setModalVisible: Function;
+  muleNames: String[];
 }
 
-const UniqueModal = ({ item, uniques, setUniques, checked }: IItemProps) => {
+const UniqueModal = ({
+  item,
+  uniques,
+  setUniques,
+  checked,
+  setModalVisible,
+  muleNames,
+}: IItemProps) => {
   const itemKeys = Object.keys(item);
   const props = itemKeys.filter((prop) => prop.slice(0, 4) === "prop");
-
+  const [selectedMule, setSelectedMule] = useState<string>("");
   type keys = keyof IUniqueItem;
 
-  const handleSubmit = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSave = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     const newUniques: IUniqueItem[] = JSON.parse(JSON.stringify(uniques));
     const newItem = newUniques.find((unique) => unique.index === item.index);
     if (newItem) {
-      newItem.found = checked;
+      newItem.found = checked.toString();
+      saveUserUniques("jing", newUniques);
+      addToMule(selectedMule, "jing", newItem);
+      setUniques(newUniques);
     }
-    setUniques(newUniques);
+  };
+
+  const handleClose = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    setModalVisible(false);
   };
 
   const handleChange = (e: Event) => {
@@ -34,8 +57,9 @@ const UniqueModal = ({ item, uniques, setUniques, checked }: IItemProps) => {
     const name = target.name;
     const uniquesCopy = JSON.parse(JSON.stringify(uniques)) as IUniqueItem[];
     const itemCopy = uniquesCopy.find((unique) => unique.index === item.index);
-    if (itemCopy !== undefined && typeof itemCopy[name as keys] === "number") {
-      // itemCopy[name as keys] = Number(value);
+    if (itemCopy !== undefined) {
+      itemCopy[name as keys] = value;
+      console.log(itemCopy);
     }
     setUniques(uniquesCopy);
   };
@@ -62,29 +86,54 @@ const UniqueModal = ({ item, uniques, setUniques, checked }: IItemProps) => {
               <Typography>{`${item[prop as keys]} :`}</Typography>
               <Slider
                 aria-label="small"
-                defaultValue={item[min as keys] as number}
+                defaultValue={Number(item[min as keys])}
                 valueLabelDisplay="auto"
                 step={1}
                 name={stats as string}
-                value={item[stats as keys] as number}
+                value={Number(item[stats as keys])}
                 onChange={handleChange}
                 marks={[
                   {
-                    value: item[min as keys] as number,
-                    label: item[min as keys] as number,
+                    value: Number(item[min as keys]),
+                    label: Number(item[min as keys]),
                   },
                   {
-                    value: item[max as keys] as number,
-                    label: item[max as keys] as number,
+                    value: Number(item[max as keys]),
+                    label: Number(item[max as keys]),
                   },
                 ]}
-                min={item[min as keys] as number}
-                max={item[max as keys] as number}
+                min={Number(item[min as keys])}
+                max={Number(item[max as keys])}
               ></Slider>
             </>
           );
         }
       })}
+      <Typography>Add to Mule</Typography>
+      <Select
+        variant="standard"
+        sx={{ display: "flex" }}
+        value={selectedMule}
+        label="Mule"
+        onChange={(e) => {
+          e.preventDefault();
+          setSelectedMule(e.target.value);
+        }}
+      >
+        {muleNames.map((name) => {
+          return <MenuItem value={name as string}>{name}</MenuItem>;
+        })}
+      </Select>
+      <Button variant="contained" onClick={handleSave}>
+        Save
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleClose}
+        sx={{ marginLeft: "5px" }}
+      >
+        Close
+      </Button>
     </Box>
   );
 };

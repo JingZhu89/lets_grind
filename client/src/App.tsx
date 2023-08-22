@@ -1,19 +1,32 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { Grid } from "@mui/material";
-import { getUserUniques, getUserSets } from "./service";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import { ISetItem, IUniqueItem } from "./interfaces";
-import { Typography } from "@mui/material";
+import { Grid, Typography, Tabs, Tab } from "@mui/material";
+import { getUserUniques, getUserSets, getUserMules } from "./service";
+import { ISetItem, IUniqueItem, IMule } from "./interfaces";
+import Mules from "./components/Mules";
 import Item from "./components/Item";
+
+// interface TabPanelProps {
+//   children?: React.ReactNode;
+//   index: number;
+//   value: number;
+// }
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    "aria-controls": `simple-tabpanel-${index}`,
+  };
+}
+
 function App() {
   const [uniques, setUniques] = useState<IUniqueItem[]>([]);
   const [sets, setSets] = useState<ISetItem[]>([]);
-  const [selected, setSelected] = useState<"uniques" | "sets">("uniques");
+  const [muleNames, setMuleNames] = useState<String[]>([]);
+  const [value, setValue] = useState("uniques");
+  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    setValue(newValue);
+  };
 
   useEffect(() => {
     const generateInitialData = async () => {
@@ -21,77 +34,76 @@ function App() {
       setUniques(userUniques);
       const userSets = await getUserSets("jing");
       setSets(userSets);
+      const userMules = await getUserMules("jing");
+      const muleNames = userMules.map((mule) => mule.name);
+      setMuleNames(muleNames);
     };
     generateInitialData();
   }, []);
 
-  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const radioValue = e.target.value;
-    if (radioValue === "uniques" || radioValue === "sets") {
-      setSelected(radioValue);
-    }
-  };
   return (
     <Grid container>
       <Grid xs={12} item>
-        <Typography variant="h2" textAlign={"center"}>
+        <Typography
+          variant="h2"
+          textAlign="center"
+          sx={{ background: "black", color: "white" }}
+        >
           Diablo II Grail Tracker
         </Typography>
       </Grid>
+      <Grid
+        xs={12}
+        item
+        sx={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <Tabs
+          value={value}
+          onChange={handleChange}
+          aria-label="basic tabs example"
+        >
+          <Tab label="Uniques" value="uniques" {...a11yProps(0)} />
+          <Tab label="Sets" value="sets" {...a11yProps(1)} />
+          <Tab label="Mules" value="mules" {...a11yProps(2)} />
+        </Tabs>
+      </Grid>
       <Grid xs={12} item>
-        <FormControl>
-          <FormLabel>Type</FormLabel>
-          <RadioGroup
-            row
-            defaultValue="Unique"
-            name="grailType"
-            value={selected}
-            onChange={handleSelect}
-          >
-            <FormControlLabel
-              value="uniques"
-              control={<Radio />}
-              label="Uniques"
-            />
-            <FormControlLabel value="sets" control={<Radio />} label="Sets" />
-          </RadioGroup>
-        </FormControl>
-        <Grid xs={12} item>
-          <Grid container>
-            {selected === "uniques"
-              ? uniques.map((unique) => {
-                  return (
-                    <Grid xs={12} md={4} item>
-                      <Item
-                        item={unique}
-                        uniques={uniques}
-                        sets={sets}
-                        setUniques={setUniques}
-                        setSets={setSets}
-                        selected={selected}
-                      />
-                    </Grid>
-                  );
-                })
-              : null}
-            {selected === "sets"
-              ? sets.map((set) => {
-                  return (
-                    <Grid xs={12} md={4} item>
-                      <Item
-                        item={set}
-                        uniques={uniques}
-                        sets={sets}
-                        setUniques={setUniques}
-                        setSets={setSets}
-                        selected={selected}
-                      />
-                    </Grid>
-                  );
-                })
-              : null}
-          </Grid>
+        <Grid container>
+          {value === "uniques"
+            ? uniques.map((unique) => {
+                return (
+                  <Grid xs={12} md={4} item>
+                    <Item
+                      item={unique}
+                      uniques={uniques}
+                      sets={sets}
+                      setUniques={setUniques}
+                      setSets={setSets}
+                      selected={value}
+                      muleNames={muleNames}
+                    />
+                  </Grid>
+                );
+              })
+            : null}
+          {value === "sets"
+            ? sets.map((set) => {
+                return (
+                  <Grid xs={12} md={4} item>
+                    <Item
+                      item={set}
+                      uniques={uniques}
+                      sets={sets}
+                      setUniques={setUniques}
+                      setSets={setSets}
+                      selected={value}
+                      muleNames={muleNames}
+                    />
+                  </Grid>
+                );
+              })
+            : null}
+          {value === "mules" ? <Mules /> : null}
         </Grid>
       </Grid>
     </Grid>
